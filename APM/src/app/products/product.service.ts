@@ -6,6 +6,7 @@ import { catchError, tap, map, concatMap, mergeMap, first, take, concatAll, merg
 
 import { Product } from './product';
 import { Supplier } from '../suppliers/supplier';
+import { ProductCategoryService } from '../product-categories/product-category.service';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +19,8 @@ export class ProductService {
   private selectedProductSource = new BehaviorSubject<number | null>(null);
   selectedProductChanges$ = this.selectedProductSource.asObservable();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient,
+    private productCategoryService: ProductCategoryService) { }
 
   changeSelectedProduct(selectedProductId: number | null): void {
     this.selectedProductSource.next(selectedProductId);
@@ -26,34 +28,47 @@ export class ProductService {
 
   getProducts(): Observable<Product[]> {
     if (this.products) {
-        return of(this.products);
+      return of(this.products);
     }
     return this.http.get<Product[]>(this.productsUrl)
-                    .pipe(
-                        tap(data => console.log(JSON.stringify(data))),
-                        tap(data => this.products = data),
-                        catchError(this.handleError)
-                    );
-}
+      .pipe(
+        tap(data => console.log(JSON.stringify(data))),
+        tap(data => this.products = data),
+        catchError(this.handleError)
+      );
+  }
+
+  // Get the product and product category data in parallel
+  // Map the category Id to the category name
+  // [products, categories] uses destructuring to unpack the values from the arrays
+  getProductsWithCategory(): Observable<Product[]> {
+    const products$ = this.getProducts();
+    const categories$ = this.productCategoryService.getCategories();
+    return forkJoin([products$, categories$]).pipe(
+      map(([products, categories]) =>
+        products.map(p =>({...p, 'category': categories.find(c => p.categoryId === c.id).name }))
+      )
+    );
+  }
 
   // Gets a single product by id
   getProduct(id: number): Observable<Product> {
     if (id === 0) {
-        return of(this.initializeProduct());
+      return of(this.initializeProduct());
     }
     if (this.products) {
-        const foundItem = this.products.find(item => item.id === id);
-        if (foundItem) {
-            return of(foundItem);
-        }
+      const foundItem = this.products.find(item => item.id === id);
+      if (foundItem) {
+        return of(foundItem);
+      }
     }
     const url = `${this.productsUrl}/${id}`;
     return this.http.get<Product>(url)
-                    .pipe(
-                        tap(data => console.log('Data: ' + JSON.stringify(data))),
-                        catchError(this.handleError)
-                    );
-}
+      .pipe(
+        tap(data => console.log('Data: ' + JSON.stringify(data))),
+        catchError(this.handleError)
+      );
+  }
 
   // AntiPattern: Nested (or chained) http calls results in nested observables
   // that are difficult to process
@@ -138,8 +153,6 @@ export class ProductService {
         catchError(this.handleError)
       );
   }
-
-  // Pass out both using concat??
 
   private handleError(err) {
     // in a real world app, we may send the server to some remote logging infrastructure

@@ -5,29 +5,27 @@
   </div>
 
   <div class="card-body"
-  *ngIf="product$  | async as product">
+       *ngIf="product$  | async as product">
 
-    <div class="col-md-8">
-      <div class="row">
-        <div class="col-md-3">Name:</div>
-        <div class="col-md-6">{{product.productName}}</div>
-      </div>
-      <div class="row">
-        <div class="col-md-3">Code:</div>
-        <div class="col-md-6">{{product.productCode}}</div>
-      </div>
-      <div class="row">
-        <div class="col-md-3">Description:</div>
-        <div class="col-md-6">{{product.description}}</div>
-      </div>
-      <div class="row">
-        <div class="col-md-3">Price:</div>
-        <div class="col-md-6">{{product.price|currency:"USD":"symbol"}}</div>
-      </div>
-      <div class="row">
-        <div class="col-md-3">Category:</div>
-        <div class="col-md-6">{{product.categoryId}}</div>
-      </div>
+    <div class="row">
+      <div class="col-md-2">Name:</div>
+      <div class="col-md-6">{{product.productName}}</div>
+    </div>
+    <div class="row">
+      <div class="col-md-2">Code:</div>
+      <div class="col-md-6">{{product.productCode}}</div>
+    </div>
+    <div class="row">
+      <div class="col-md-2">Description:</div>
+      <div class="col-md-6">{{product.description}}</div>
+    </div>
+    <div class="row">
+      <div class="col-md-2">Price:</div>
+      <div class="col-md-6">{{product.price|currency:"USD":"symbol"}}</div>
+    </div>
+    <div class="row">
+      <div class="col-md-2">Category:</div>
+      <div class="col-md-6">{{product.category}}</div>
     </div>
 
     <div class="table-responsive">

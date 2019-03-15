@@ -11,7 +11,7 @@
               *ngFor='let product of products'
               [ngClass]="{'active': product?.id === (selectedProductId$ | async)}"
               (click)='onSelected(product.id)'>
-        {{ product.productName }} ({{ product.productCode }})
+        {{ product.productName }} ({{ product.category }})
       </button>
     </div>
   </div>

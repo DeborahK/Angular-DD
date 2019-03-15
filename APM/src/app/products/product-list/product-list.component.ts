@@ -34,7 +34,7 @@ export class ProductListComponent implements OnInit {
 
     this.selectedProductId$ = this.productService.selectedProductChanges$;
 
-    this.products$ = this.productService.getProducts()
+    this.products$ = this.productService.getProductsWithCategory()
       .pipe(
         catchError(error => {
           this.errorMessage = error;

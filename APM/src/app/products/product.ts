@@ -1,6 +1,9 @@
+import { Supplier } from "../suppliers/supplier";
+
 /* 
   Defines the product entity
-  Note that this shape includes both the categoryId and the category string
+  This shape includes both the categoryId and the category string
+  This shape includes both the supplierIds and the supplier objects
 */
 export interface Product {
   id: number;
@@ -8,7 +11,8 @@ export interface Product {
   productCode: string;
   categoryId: number;
   category?: string;
-  price: number;
   description: string;
+  price: number;
   supplierIds?: number[];
+  suppliers?: Supplier[]
 }

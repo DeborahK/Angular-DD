@@ -13,12 +13,16 @@ export class ProductCategoryService {
   private productsUrl = 'api/productCategories';
 
   // All product categories
-  productCategories$: Observable<ProductCategory[]>= this.getCategories();
+  productCategories$: Observable<ProductCategory[]>;
 
   constructor(private http: HttpClient) { }
 
   // Refresh the data.
   refreshData(): void {
+    this.start();
+  }
+
+  start() {
     this.productCategories$ = this.getCategories();
   }
 

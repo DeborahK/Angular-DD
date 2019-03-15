@@ -30,7 +30,7 @@
 
     <div class="table-responsive">
       <table class="table mb-0"
-             *ngIf="suppliers">
+             *ngIf="suppliers$ | async as suppliers">
         <thead>
           <tr>
             <th>Supplier</th>

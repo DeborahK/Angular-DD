@@ -9,12 +9,10 @@ import { ProductCategoryService } from 'src/app/product-categories/product-categ
 export class ProductShellComponent implements OnInit {
     pageTitle: string = 'Products';
 
-    constructor(private productService: ProductService,
-        private productCategoryService: ProductCategoryService) { }
+    constructor(private productService: ProductService) { }
 
     ngOnInit(): void {
         // Set up the product services
-        // Don't need to subscribe due to async pipe
         this.productService.start();
     }
 }

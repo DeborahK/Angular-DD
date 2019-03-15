@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { Observable, throwError, forkJoin } from 'rxjs';
+import { catchError, tap, shareReplay, mergeMap, toArray } from 'rxjs/operators';
 
 import { Supplier } from './supplier';
 
@@ -14,43 +14,39 @@ export class SupplierService {
 
     constructor(private http: HttpClient) { }
 
-    getSuppliers(): Observable<Supplier[]> {
+    // Gets all suppliers
+    private getSuppliers(): Observable<Supplier[]> {
         return this.http.get<Supplier[]>(this.suppliersUrl)
             .pipe(
-                tap(data => console.log(JSON.stringify(data))),
+                tap(data => console.log('getSuppliers: ', JSON.stringify(data))),
                 catchError(this.handleError)
             );
+    }
+
+    // Gets set of suppliers given a set of ids
+    getSuppliersByIds(ids: number[]): Observable<Supplier[]> {
+        // Build the list of http calls
+        const calls: Observable<Supplier>[] = [];
+        ids.map(id => {
+            const url = `${this.suppliersUrl}/${id}`;
+            calls.push(this.http.get<Supplier>(url));
+        })
+        // join the calls
+        return forkJoin(...calls).pipe(
+            tap(data => console.log('getSupplier: ', JSON.stringify(data))),
+            catchError(this.handleError)
+        )
     }
 
     // Gets a single supplier by id
-    getSupplier(id: number): Observable<Supplier> {
+    private getSupplier(id: number): Observable<Supplier> {
         const url = `${this.suppliersUrl}/${id}`;
         return this.http.get<Supplier>(url)
             .pipe(
-                tap(data => console.log('getSupplier: ' + JSON.stringify(data))),
+                tap(data => console.log('getSupplier: ', JSON.stringify(data))),
                 catchError(this.handleError)
             );
     }
-
-    // To get the suppliers for a product
-    // Given the product name
-    // Gets the product to obtain the Id
-    // The query returns an array, so maps to the first product in the array
-    // Uses the id to get the suppliers
-    // Only returns the suppliers (not the product)
-    // getSuppliersForProductByName(productName: string): Observable<Supplier[]> {
-    //     const productUrl = `${this.productsUrl}?productName=^${productName}$`;
-    //     return this.http.get<Product>(productUrl)
-    //         .pipe(
-    //             map(products => products[0]),
-    //             mergeMap(product => {
-    //                 const supplierUrl = `${this.suppliersUrl}?productId=^${product.id}$`;
-    //                 return this.http.get<Supplier[]>(supplierUrl);
-    //             }),
-    //             tap(data => console.log(data)),
-    //             catchError(this.handleError)
-    //         );
-    // }
 
     private handleError(err) {
         // in a real world app, we may send the server to some remote logging infrastructure

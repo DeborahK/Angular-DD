@@ -14,9 +14,9 @@ import { Supplier } from '../../suppliers/supplier';
 export class ProductDetailComponent implements OnInit {
     pageTitle: string = 'Product Detail';
 
-    product$: Observable<Product | null>;
     selectedProductId$: Observable<number | null>
-    suppliers: Supplier[] = [];
+    product$: Observable<Product | null>;
+    suppliers$: Observable<Supplier[]>;
     errorMessage: string;
 
     constructor(private productService: ProductService) { }
@@ -26,7 +26,10 @@ export class ProductDetailComponent implements OnInit {
         // Get the selected product and display the appropriate heading
         this.selectedProductId$ = this.productService.selectedProductChanges$
             .pipe(
-                tap(() => this.product$ = this.productService.selectedProduct$)
+                tap(() => {
+                    this.product$ = this.productService.selectedProduct$;
+                    this.suppliers$ = this.productService.selectedProductSuppliers$;
+                })
             )
     }
 

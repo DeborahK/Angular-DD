@@ -1,37 +1,38 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-
-import { Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
-
+import { Injectable } from '@angular/core';
+import { Observable, ReplaySubject, throwError } from 'rxjs';
+import { catchError, mergeMap, take, tap } from 'rxjs/operators';
 import { ProductCategory } from './product-category';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductCategoryService {
+  private refresh = new ReplaySubject<void>();
   private productsUrl = 'api/productCategories';
 
   // All product categories
-  productCategories$: Observable<ProductCategory[]>;
+  productCategories$: Observable<ProductCategory[]> = this.refresh.pipe(
+    /** any xxxMap will do, merge is the safest. */
+    mergeMap(() => this.http.get<ProductCategory[]>(this.productsUrl)),
+    /** As its' not completing bcs of the subject, use take to make it behave as usual */
+    take(1),
+    tap({
+      next: data => console.log('getCategories', JSON.stringify(data)),
+      complete: () => console.log('competed request!')
+    }),
+    catchError(this.handleError)
+  );
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   // Refresh the data.
   refreshData(): void {
-    this.start();
+    this.refresh.next();
   }
 
   start() {
-    this.productCategories$ = this.getCategories();
-  }
-
-  private getCategories(): Observable<ProductCategory[]> {
-    return this.http.get<ProductCategory[]>(this.productsUrl)
-      .pipe(
-        tap(data => console.log('getCategories', JSON.stringify(data))),
-        catchError(this.handleError)
-      );
+    this.refreshData();
   }
 
   private handleError(err) {

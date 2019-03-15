@@ -7,7 +7,6 @@ import { catchError, tap } from 'rxjs/operators';
 import { Product } from '../product';
 import { ProductService } from '../product.service';
 
-
 @Component({
   selector: 'pm-product-list',
   templateUrl: './product-list.component.html'
@@ -15,32 +14,26 @@ import { ProductService } from '../product.service';
 export class ProductListComponent implements OnInit {
   pageTitle = 'Products';
   errorMessage: string;
-  products$: Observable<Product[]>;
-  selectedProductId$: Observable<number | null>;
+  products$ = this.productService.productsWithCategory$.pipe(
+    catchError(error => {
+      this.errorMessage = error;
+      return of(null);
+    })
+  );
+  selectedProductId$ = this.productService.selectedProductChanges$;
 
-  constructor(private route: ActivatedRoute,
+  constructor(
+    private route: ActivatedRoute,
     private router: Router,
-    private productService: ProductService) { }
+    private productService: ProductService
+  ) {}
 
   ngOnInit(): void {
-
     // Read the parameter from the route - supports deep linking
-    this.route.paramMap.subscribe(
-      params => {
-        const id = +params.get('id');
-        this.productService.changeSelectedProduct(id);
-      }
-    );
-
-    this.selectedProductId$ = this.productService.selectedProductChanges$;
-
-    this.products$ = this.productService.productsWithCategory$
-      .pipe(
-        catchError(error => {
-          this.errorMessage = error;
-          return of(null);
-        })
-      );
+    this.route.paramMap.subscribe(params => {
+      const id = +params.get('id');
+      this.productService.changeSelectedProduct(id);
+    });
   }
 
   onRefresh(): void {
@@ -48,8 +41,7 @@ export class ProductListComponent implements OnInit {
   }
 
   onSelected(productId: number): void {
-      // Modify the URL to support deep linking
+    // Modify the URL to support deep linking
     this.router.navigate(['/products', productId]);
   }
-
 }

@@ -1,48 +1,76 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-
-import { Observable, throwError, forkJoin, from, BehaviorSubject } from 'rxjs';
-import { catchError, tap, map, mergeMap, toArray, shareReplay } from 'rxjs/operators';
-
-import { Product } from './product';
-import { Supplier } from '../suppliers/supplier';
+import { Injectable } from '@angular/core';
+import { combineLatest, forkJoin, Observable, ReplaySubject, throwError } from 'rxjs';
+import { catchError, map, mergeMap, shareReplay, take, tap } from 'rxjs/operators';
 import { ProductCategoryService } from '../product-categories/product-category.service';
 import { SupplierService } from '../suppliers/supplier.service';
+import { Product } from './product';
+
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
+  private refresh = new ReplaySubject<void>();
+  private selectedProductSource = new ReplaySubject<number>();
   private productsUrl = 'api/products';
   private suppliersUrl = 'api/suppliers';
 
-  // Currently selected product
-  selectedProduct$: Observable<Product>;
-  selectedProductSuppliers$: Observable<Supplier[]>;
-  private selectedProductSource = new BehaviorSubject<number | null>(null);
   selectedProductChanges$ = this.selectedProductSource.asObservable();
 
   // All products
-  products$: Observable<Product[]>;
-  productsWithCategory$: Observable<Product[]>;
+  /** note, all the types are still there, I just don't need to type them out. */
+  products$ = this.refresh.pipe(
+    mergeMap(() => this.http.get<Product[]>(this.productsUrl)),
+    take(1),
+    tap(data => console.log('getProducts: ', JSON.stringify(data))),
+    catchError(this.handleError)
+  );
 
-  constructor(private http: HttpClient,
+  productsWithCategory$ = forkJoin([
+    this.products$,
+    this.productCategoryService.productCategories$
+  ]).pipe(
+    map(([products, categories]) =>
+      products.map(
+        p =>
+          ({
+            ...p,
+            category: categories.find(c => p.categoryId === c.id).name
+          } as Product) // <-- note the type here!
+      )
+    ),
+    shareReplay(1)
+  );
+
+  // Currently selected product
+  selectedProduct$ = combineLatest(
+    this.selectedProductChanges$,
+    this.productsWithCategory$
+  ).pipe(
+    map(([selectedProductId, products]) =>
+      products.find(product => product.id === selectedProductId)
+    ),
+    // Displays this message twice??
+    /** yes, one for each subscription. You might want to share() this. */
+    tap(product => console.log('changeSelectedProduct', product))
+  );
+
+  selectedProductSuppliers$ = this.selectedProduct$.pipe(
+    mergeMap(product =>
+      this.supplierService.getSuppliersByIds(product.supplierIds)
+    )
+  );
+
+  constructor(
+    private http: HttpClient,
     private productCategoryService: ProductCategoryService,
-    private supplierService: SupplierService) { }
+    private supplierService: SupplierService
+  ) {}
 
   // Change the selected product
   changeSelectedProduct(selectedProductId: number | null): void {
-    // This will only be set if it is bound via an async pipe
-    this.selectedProduct$ = this.productsWithCategory$.pipe(
-      map(products => products.find(product => product.id === selectedProductId)),
-      // Displays this message twice??
-      tap(product => console.log('changeSelectedProduct', product))
-    );
-    // This will only be set if it is bound via an async pipe
-    this.selectedProductSuppliers$ = this.selectedProduct$
-      .pipe(
-        mergeMap(product => this.supplierService.getSuppliersByIds(product.supplierIds))
-      );
     this.selectedProductSource.next(selectedProductId);
   }
 
@@ -66,44 +94,29 @@ export class ProductService {
 
   // Refresh the data.
   refreshData(): void {
+    console.log('init refresh')
     this.start();
   }
 
   start() {
     // Start the related services
     this.productCategoryService.start();
-
-    // All products
-    this.products$ = this.getProducts().pipe(
-      shareReplay(1)
-    );
-
-    // Products with categoryId foreign key mapped to category string
-    // [products, categories] uses destructuring to unpack the values from the arrays
-    this.productsWithCategory$ = forkJoin([this.products$, this.productCategoryService.productCategories$]).pipe(
-      map(([products, categories]) =>
-        products.map(p => ({ ...p, 'category': categories.find(c => p.categoryId === c.id).name }))
-      ),
-      shareReplay(1)
-    );
-  }
-
-  private getProducts(): Observable<Product[]> {
-    return this.http.get<Product[]>(this.productsUrl)
-      .pipe(
-        tap(data => console.log('getProducts: ', JSON.stringify(data))),
-        catchError(this.handleError)
-      );
+    this.refresh.next();
   }
 
   // Gets a single product by id
   private getProduct(id: number): Observable<Product> {
-    const url = `${this.productsUrl}/${id}`;
-    return this.http.get<Product>(url)
-      .pipe(
-        tap(data => console.log('getProduct: ', JSON.stringify(data))),
-        catchError(this.handleError)
-      );
+    // const url = `${this.productsUrl}/${id}`;
+    return this.products$.pipe(
+      /**
+       * this will load all products,
+       * perhaps keeping a single http call here is better in some cases.
+       * all depends on requirements. as an Observables sample I like this better ;)
+       */
+      map(productlist => productlist.find(row => row.id === id)),
+      tap(data => console.log('getProduct: ', JSON.stringify(data))),
+      catchError(this.handleError)
+    );
   }
 
   private handleError(err) {
@@ -121,5 +134,4 @@ export class ProductService {
     console.error(err);
     return throwError(errorMessage);
   }
-
 }

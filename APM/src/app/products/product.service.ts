@@ -34,15 +34,15 @@ export class ProductService {
   changeSelectedProduct(selectedProductId: number | null): void {
     // This will only be set if it is bound via an async pipe
     this.selectedProduct$ = this.productsWithCategory$.pipe(
-      map(products => products.find(product => product.id === selectedProductId))
-    )
+      map(products => products.find(product => product.id === selectedProductId)),
+      // Displays this message twice??
+      tap(product => console.log('changeSelectedProduct', product))
+    );
     // This will only be set if it is bound via an async pipe
-    this.selectedProductSuppliers$ = this.productsWithCategory$
+    this.selectedProductSuppliers$ = this.selectedProduct$
       .pipe(
-        map(products => products.find(product => product.id === selectedProductId)),
-        tap(x => console.log(x)),
         mergeMap(product => this.supplierService.getSuppliersByIds(product.supplierIds))
-      )
+      );
     this.selectedProductSource.next(selectedProductId);
   }
 
@@ -54,7 +54,7 @@ export class ProductService {
   //   const productUrl = `${this.productsUrl}/${id}`;
   //   return this.http.get<Product>(productUrl)
   //     .pipe(
-  //       map(product => 
+  //       map(product =>
   //         product.supplierIds.map(supplierId => {
   //           const supplierUrl = `${this.suppliersUrl}/${supplierId}`;
   //           return this.http.get(supplierUrl);
@@ -76,7 +76,7 @@ export class ProductService {
     // All products
     this.products$ = this.getProducts().pipe(
       shareReplay(1)
-    )
+    );
 
     // Products with categoryId foreign key mapped to category string
     // [products, categories] uses destructuring to unpack the values from the arrays
@@ -97,7 +97,7 @@ export class ProductService {
   }
 
   // Gets a single product by id
-  getProduct(id: number): Observable<Product> {
+  private getProduct(id: number): Observable<Product> {
     const url = `${this.productsUrl}/${id}`;
     return this.http.get<Product>(url)
       .pipe(

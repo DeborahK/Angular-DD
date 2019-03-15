@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 import { Observable, throwError, forkJoin } from 'rxjs';
-import { catchError, tap, shareReplay, mergeMap, toArray } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 
 import { Supplier } from './supplier';
 
@@ -30,12 +30,12 @@ export class SupplierService {
         ids.map(id => {
             const url = `${this.suppliersUrl}/${id}`;
             calls.push(this.http.get<Supplier>(url));
-        })
-        // join the calls
-        return forkJoin(...calls).pipe(
-            tap(data => console.log('getSupplier: ', JSON.stringify(data))),
+        });
+        // Join the calls
+        return forkJoin(calls).pipe(
+            tap(data => console.log('getSuppliersByIds: ', JSON.stringify(data))),
             catchError(this.handleError)
-        )
+        );
     }
 
     // Gets a single supplier by id

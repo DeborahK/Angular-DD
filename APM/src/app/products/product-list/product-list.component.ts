@@ -13,7 +13,7 @@ import { ProductService } from '../product.service';
   templateUrl: './product-list.component.html'
 })
 export class ProductListComponent implements OnInit {
-  pageTitle: string = 'Products';
+  pageTitle = 'Products';
   errorMessage: string;
   products$: Observable<Product[]>;
   selectedProductId$: Observable<number | null>;
@@ -30,7 +30,7 @@ export class ProductListComponent implements OnInit {
         const id = +params.get('id');
         this.productService.changeSelectedProduct(id);
       }
-    )
+    );
 
     this.selectedProductId$ = this.productService.selectedProductChanges$;
 
@@ -38,7 +38,7 @@ export class ProductListComponent implements OnInit {
       .pipe(
         catchError(error => {
           this.errorMessage = error;
-          return of(null)
+          return of(null);
         })
       );
   }

@@ -5,6 +5,6 @@ import { Component } from '@angular/core';
   templateUrl: './menu.component.html'
 })
 export class MenuComponent {
-  pageTitle: string = 'Acme Product Management';
+  pageTitle = 'Acme Product Management';
 
 }

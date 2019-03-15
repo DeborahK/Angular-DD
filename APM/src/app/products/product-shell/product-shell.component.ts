@@ -7,7 +7,7 @@ import { ProductCategoryService } from 'src/app/product-categories/product-categ
     templateUrl: './product-shell.component.html'
 })
 export class ProductShellComponent implements OnInit {
-    pageTitle: string = 'Products';
+    pageTitle = 'Products';
 
     constructor(private productService: ProductService) { }
 

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 
-import { Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
 import { ProductService } from '../product.service';
@@ -12,9 +12,9 @@ import { Supplier } from '../../suppliers/supplier';
     templateUrl: './product-detail.component.html'
 })
 export class ProductDetailComponent implements OnInit {
-    pageTitle: string = 'Product Detail';
+    pageTitle = 'Product Detail';
 
-    selectedProductId$: Observable<number | null>
+    selectedProductId$: Observable<number | null>;
     product$: Observable<Product | null>;
     suppliers$: Observable<Supplier[]>;
     errorMessage: string;
@@ -30,7 +30,7 @@ export class ProductDetailComponent implements OnInit {
                     this.product$ = this.productService.selectedProduct$;
                     this.suppliers$ = this.productService.selectedProductSuppliers$;
                 })
-            )
+            );
     }
 
     displayProduct(product: Product): void {

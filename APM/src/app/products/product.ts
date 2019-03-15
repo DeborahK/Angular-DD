@@ -1,6 +1,6 @@
-import { Supplier } from "../suppliers/supplier";
+import { Supplier } from '../suppliers/supplier';
 
-/* 
+/*
   Defines the product entity
   This shape includes both the categoryId and the category string
   This shape includes both the supplierIds and the supplier objects
@@ -14,5 +14,5 @@ export interface Product {
   description: string;
   price: number;
   supplierIds?: number[];
-  suppliers?: Supplier[]
+  suppliers?: Supplier[];
 }

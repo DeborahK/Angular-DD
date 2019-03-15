@@ -1,41 +1,51 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
+
+import { of, Observable } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { Product } from '../product';
 import { ProductService } from '../product.service';
-import { Subscription } from 'rxjs';
+
 
 @Component({
   selector: 'pm-product-list',
   templateUrl: './product-list.component.html'
 })
-export class ProductListComponent implements OnInit, OnDestroy {
+export class ProductListComponent implements OnInit {
   pageTitle: string = 'Products';
   errorMessage: string;
-  products: Product[];
-  selectedProduct: Product | null;
-  sub: Subscription;
+  products$: Observable<Product[]>;
+  selectedProductId$: Observable<number | null>;
 
-  constructor(private productService: ProductService) { }
+  constructor(private route: ActivatedRoute,
+    private router: Router,
+    private productService: ProductService) { }
 
   ngOnInit(): void {
-    this.sub = this.productService.selectedProductChanges$.subscribe(
-      selectedProduct => this.selectedProduct = selectedProduct
-    );
+    // Read the parameter from the route
+    // A route parameter will be present when deep linking
+    const productId = +this.route.paramMap.subscribe(
+      params => {
+        const id = +params.get('id');
+        this.productService.changeSelectedProduct(id);
+      }
+    )
 
-    this.productService.getProducts().subscribe(
-      (products: Product[]) => {
-        this.products = products;
-      },
-      (error: any) => this.errorMessage = <any>error
-    );
+    this.selectedProductId$ = this.productService.selectedProductChanges$;
+
+    this.products$ = this.productService.getProducts()
+      .pipe(
+        catchError(error => {
+          this.errorMessage = error;
+          return of(null)
+        })
+      );
   }
 
-  onSelected(product: Product): void {
-    this.productService.changeSelectedProduct(product);
-  }
-
-  ngOnDestroy(): void {
-    this.sub.unsubscribe();
+  onSelected(productId: number): void {
+      // Modify the URL to support deep linking
+    this.router.navigate(['/products', productId]);
   }
 
 }

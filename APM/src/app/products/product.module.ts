@@ -19,7 +19,7 @@ import { SharedModule } from '../shared/shared.module';
       },
       {
         path: ':id',
-        component: ProductDetailComponent
+        component: ProductShellComponent
       }
     ])
   ],

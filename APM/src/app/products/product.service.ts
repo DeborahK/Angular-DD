@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
-import { Observable, of, throwError, Subject, forkJoin, from, BehaviorSubject } from 'rxjs';
+import { Observable, of, throwError, forkJoin, from, BehaviorSubject } from 'rxjs';
 import { catchError, tap, map, concatMap, mergeMap, first, take, concatAll, mergeAll, toArray, switchMap } from 'rxjs/operators';
 
 import { Product } from './product';
@@ -15,13 +15,13 @@ export class ProductService {
   private suppliersUrl = 'api/suppliers';
   private products: Product[];
 
-  private selectedProductSource = new BehaviorSubject<Product | null>(null);
+  private selectedProductSource = new BehaviorSubject<number | null>(null);
   selectedProductChanges$ = this.selectedProductSource.asObservable();
 
   constructor(private http: HttpClient) { }
 
-  changeSelectedProduct(selectedProduct: Product | null): void {
-    this.selectedProductSource.next(selectedProduct);
+  changeSelectedProduct(selectedProductId: number | null): void {
+    this.selectedProductSource.next(selectedProductId);
   }
 
   getProducts(): Observable<Product[]> {

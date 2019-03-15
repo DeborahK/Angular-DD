@@ -1,6 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
-import { Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 import { ProductService } from '../product.service';
 import { Product } from '../product';
@@ -10,27 +11,28 @@ import { Supplier } from '../../suppliers/supplier';
     selector: 'pm-product-detail',
     templateUrl: './product-detail.component.html'
 })
-export class ProductDetailComponent implements OnInit, OnDestroy {
+export class ProductDetailComponent implements OnInit {
     pageTitle: string = 'Product Detail';
 
-    product: Product | null;
-    sub: Subscription;
+    product$: Observable<Product | null>;
+    selectedProductId$: Observable<number | null>
     suppliers: Supplier[] = [];
     errorMessage: string;
 
     constructor(private productService: ProductService) { }
 
     ngOnInit() {
-        this.sub = this.productService.selectedProductChanges$.subscribe(
-            selectedProduct => {
-                this.product = selectedProduct;
-                this.displayProduct(this.product);
-            }
-        );
-    }
-
-    ngOnDestroy(): void {
-        this.sub.unsubscribe();
+        // Watch for changes to the selected product
+        // Get the selected product and display the appropriate heading
+        this.selectedProductId$ = this.productService.selectedProductChanges$
+            .pipe(
+                tap(productId => {
+                    tap(() => console.log(productId));
+                    this.product$ = this.productService.getProduct(productId).pipe(
+                        tap(product => this.displayProduct(product))
+                    );
+                })
+            )
     }
 
     displayProduct(product: Product): void {

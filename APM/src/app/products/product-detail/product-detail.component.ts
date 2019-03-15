@@ -26,12 +26,7 @@ export class ProductDetailComponent implements OnInit {
         // Get the selected product and display the appropriate heading
         this.selectedProductId$ = this.productService.selectedProductChanges$
             .pipe(
-                tap(productId => {
-                    tap(() => console.log(productId));
-                    this.product$ = this.productService.getProduct(productId).pipe(
-                        tap(product => this.displayProduct(product))
-                    );
-                })
+                tap(() => this.product$ = this.productService.selectedProduct$)
             )
     }
 

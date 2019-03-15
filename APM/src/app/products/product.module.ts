@@ -14,10 +14,6 @@ import { SharedModule } from '../shared/shared.module';
     ReactiveFormsModule,
     RouterModule.forChild([
       {
-        path: '',
-        component: ProductShellComponent
-      },
-      {
         path: ':id',
         component: ProductShellComponent
       }

@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { Observable, of, throwError, forkJoin, from, BehaviorSubject } from 'rxjs';
-import { catchError, tap, map, concatMap, mergeMap, first, take, concatAll, mergeAll, toArray, switchMap } from 'rxjs/operators';
+import { Observable, throwError, forkJoin, from, BehaviorSubject } from 'rxjs';
+import { catchError, tap, map, mergeMap, toArray, shareReplay } from 'rxjs/operators';
 
 import { Product } from './product';
 import { Supplier } from '../suppliers/supplier';
@@ -14,60 +14,26 @@ import { ProductCategoryService } from '../product-categories/product-category.s
 export class ProductService {
   private productsUrl = 'api/products';
   private suppliersUrl = 'api/suppliers';
-  private products: Product[];
 
+  // Currently selected product
+  selectedProduct$: Observable<Product>;
+  selectedProductWithCategory$: Observable<Product>;
   private selectedProductSource = new BehaviorSubject<number | null>(null);
   selectedProductChanges$ = this.selectedProductSource.asObservable();
+
+  // All products
+  products$: Observable<Product[]>;
+  productsWithCategory$: Observable<Product[]>;
 
   constructor(private http: HttpClient,
     private productCategoryService: ProductCategoryService) { }
 
+  // Change the selected product
   changeSelectedProduct(selectedProductId: number | null): void {
+    this.selectedProduct$ = this.productsWithCategory$.pipe(
+      map(products => products.find(product => product.id === selectedProductId))
+    )
     this.selectedProductSource.next(selectedProductId);
-  }
-
-  getProducts(): Observable<Product[]> {
-    if (this.products) {
-      return of(this.products);
-    }
-    return this.http.get<Product[]>(this.productsUrl)
-      .pipe(
-        tap(data => console.log(JSON.stringify(data))),
-        tap(data => this.products = data),
-        catchError(this.handleError)
-      );
-  }
-
-  // Get the product and product category data in parallel
-  // Map the category Id to the category name
-  // [products, categories] uses destructuring to unpack the values from the arrays
-  getProductsWithCategory(): Observable<Product[]> {
-    const products$ = this.getProducts();
-    const categories$ = this.productCategoryService.getCategories();
-    return forkJoin([products$, categories$]).pipe(
-      map(([products, categories]) =>
-        products.map(p =>({...p, 'category': categories.find(c => p.categoryId === c.id).name }))
-      )
-    );
-  }
-
-  // Gets a single product by id
-  getProduct(id: number): Observable<Product> {
-    if (id === 0) {
-      return of(this.initializeProduct());
-    }
-    if (this.products) {
-      const foundItem = this.products.find(item => item.id === id);
-      if (foundItem) {
-        return of(foundItem);
-      }
-    }
-    const url = `${this.productsUrl}/${id}`;
-    return this.http.get<Product>(url)
-      .pipe(
-        tap(data => console.log('Data: ' + JSON.stringify(data))),
-        catchError(this.handleError)
-      );
   }
 
   // AntiPattern: Nested (or chained) http calls results in nested observables
@@ -121,35 +87,74 @@ export class ProductService {
   // }
 
   // Gets all suppliers for a product as an array.
-  getProductSuppliers(id: number): Observable<Supplier[]> {
-    const productUrl = `${this.productsUrl}/${id}`;
-    return this.http.get<Product>(productUrl)
+  // getProductSuppliers(id: number): Observable<Supplier[]> {
+  //   const productUrl = `${this.productsUrl}/${id}`;
+  //   return this.http.get<Product>(productUrl)
+  //     .pipe(
+  //       mergeMap(product =>
+  //         from(product.supplierIds).pipe(
+  //           mergeMap(supplierId => {
+  //             const supplierUrl = `${this.suppliersUrl}/${supplierId}`;
+  //             return this.http.get<Supplier>(supplierUrl);
+  //           })
+  //         )),
+  //       toArray(),
+  //       catchError(this.handleError)
+  //     );
+  // }
+
+  // Gets all suppliers for a product one by one.
+  // If the second mergeMap is changed to switchMap, only one value is displayed.
+  // getProductSuppliersOneByOne(id: number): Observable<Supplier> {
+  //   const productUrl = `${this.productsUrl}/${id}`;
+  //   return this.http.get<Product>(productUrl)
+  //     .pipe(
+  //       mergeMap(product =>
+  //         from(product.supplierIds).pipe(
+  //           mergeMap(supplierId => {
+  //             const supplierUrl = `${this.suppliersUrl}/${supplierId}`;
+  //             return this.http.get<Supplier>(supplierUrl);
+  //           })
+  //         )),
+  //       catchError(this.handleError)
+  //     );
+  // }
+
+  // Refresh the data.
+  refreshData(): void {
+    this.start();
+  }
+
+  start() {
+    // All products
+    this.products$ = this.getProducts().pipe(
+      shareReplay(1)
+    )
+
+    // Products with categoryId foreign key mapped to category string
+    // [products, categories] uses destructuring to unpack the values from the arrays
+    this.productsWithCategory$ = forkJoin([this.products$, this.productCategoryService.productCategories$]).pipe(
+      map(([products, categories]) =>
+        products.map(p => ({ ...p, 'category': categories.find(c => p.categoryId === c.id).name }))
+      ),
+      shareReplay(1)
+    );
+  }
+
+  private getProducts(): Observable<Product[]> {
+    return this.http.get<Product[]>(this.productsUrl)
       .pipe(
-        mergeMap(product =>
-          from(product.supplierIds).pipe(
-            mergeMap(supplierId => {
-              const supplierUrl = `${this.suppliersUrl}/${supplierId}`;
-              return this.http.get<Supplier>(supplierUrl);
-            })
-          )),
-        toArray(),
+        tap(data => console.log(JSON.stringify(data))),
         catchError(this.handleError)
       );
   }
 
-  // Gets all suppliers for a product one by one.
-  // If the second mergeMap is changed to switchMap, only one value is displayed.
-  getProductSuppliersOneByOne(id: number): Observable<Supplier> {
-    const productUrl = `${this.productsUrl}/${id}`;
-    return this.http.get<Product>(productUrl)
+  // Gets a single product by id
+  getProduct(id: number): Observable<Product> {
+    const url = `${this.productsUrl}/${id}`;
+    return this.http.get<Product>(url)
       .pipe(
-        mergeMap(product =>
-          from(product.supplierIds).pipe(
-            mergeMap(supplierId => {
-              const supplierUrl = `${this.suppliersUrl}/${supplierId}`;
-              return this.http.get<Supplier>(supplierUrl);
-            })
-          )),
+        tap(data => console.log('Data: ' + JSON.stringify(data))),
         catchError(this.handleError)
       );
   }
@@ -170,15 +175,4 @@ export class ProductService {
     return throwError(errorMessage);
   }
 
-  private initializeProduct(): Product {
-    // Return an initialized object
-    return {
-      id: 0,
-      productName: null,
-      productCode: null,
-      categoryId: null,
-      price: null,
-      description: null
-    };
-  }
 }

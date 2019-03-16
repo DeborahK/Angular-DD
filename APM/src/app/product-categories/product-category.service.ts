@@ -8,10 +8,18 @@ import { ProductCategory } from './product-category';
   providedIn: 'root'
 })
 export class ProductCategoryService {
+  // Getting started and refresh ... not a data stream so therefore use ReplaySubject to retain the values
+  // "Reactive" way to control flow.
+  // Not ever actually putting any data into it.
   private refresh = new ReplaySubject<void>();
   private productsUrl = 'api/productCategories';
 
   // All product categories
+  // Refresh is used as a starter here.
+  // [Object reference to a function]
+  // HTTP: One and done eg. Autocomplete
+  // Using refresh here instead of reassigning the value ensures that
+  // no references are lost.
   productCategories$: Observable<ProductCategory[]> = this.refresh.pipe(
     /** any xxxMap will do, merge is the safest. */
     mergeMap(() => this.http.get<ProductCategory[]>(this.productsUrl)),
@@ -21,10 +29,10 @@ export class ProductCategoryService {
       next: data => console.log('getCategories', JSON.stringify(data)),
       complete: () => console.log('competed request!')
     }),
-    catchError(this.handleError)
+    catchError((this.handleError))
   );
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // Refresh the data.
   refreshData(): void {

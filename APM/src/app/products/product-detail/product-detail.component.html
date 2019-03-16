@@ -1,36 +1,35 @@
 <div class="card"
-     *ngIf="selectedProductId$  | async">
+     *ngIf="vm$ | async  as vm ">
   <div class="card-header">
     {{pageTitle}}
   </div>
 
-  <div class="card-body"
-       *ngIf="product$  | async as product">
+  <div class="card-body">
 
     <div class="row">
       <div class="col-md-2">Name:</div>
-      <div class="col-md-6">{{product.productName}}</div>
+      <div class="col-md-6">{{vm.product.productName}}</div>
     </div>
     <div class="row">
       <div class="col-md-2">Code:</div>
-      <div class="col-md-6">{{product.productCode}}</div>
+      <div class="col-md-6">{{vm.product.productCode}}</div>
     </div>
     <div class="row">
       <div class="col-md-2">Description:</div>
-      <div class="col-md-6">{{product.description}}</div>
+      <div class="col-md-6">{{vm.product.description}}</div>
     </div>
     <div class="row">
       <div class="col-md-2">Price:</div>
-      <div class="col-md-6">{{product.price|currency:"USD":"symbol"}}</div>
+      <div class="col-md-6">{{vm.product.price|currency:"USD":"symbol"}}</div>
     </div>
     <div class="row">
       <div class="col-md-2">Category:</div>
-      <div class="col-md-6">{{product.category}}</div>
+      <div class="col-md-6">{{vm.product.category}}</div>
     </div>
 
     <div class="table-responsive">
       <table class="table mb-0"
-             *ngIf="suppliers$ | async as suppliers">
+             *ngIf="vm.suppliers">
         <thead>
           <tr>
             <th>Supplier</th>
@@ -39,7 +38,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let supplier of suppliers">
+          <tr *ngFor="let supplier of vm.suppliers">
             <td>{{ supplier.name }} </td>
             <td>{{ supplier.cost | currency:"USD":"symbol":"1.2-2" }}</td>
             <td>{{ supplier.minQuantity }}</td>

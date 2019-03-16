@@ -1,12 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { combineLatest, forkJoin, Observable, ReplaySubject, throwError } from 'rxjs';
-import { catchError, map, mergeMap, shareReplay, take, tap } from 'rxjs/operators';
+import { catchError, map, mergeMap, shareReplay, take, tap, filter, switchMap } from 'rxjs/operators';
 import { ProductCategoryService } from '../product-categories/product-category.service';
 import { SupplierService } from '../suppliers/supplier.service';
 import { Product } from './product';
-
-
 
 @Injectable({
   providedIn: 'root'
@@ -24,14 +22,17 @@ export class ProductService {
   products$ = this.refresh.pipe(
     mergeMap(() => this.http.get<Product[]>(this.productsUrl)),
     take(1),
+    shareReplay({ bufferSize: 1, refCount: false }),
     tap(data => console.log('getProducts: ', JSON.stringify(data))),
     catchError(this.handleError)
   );
 
-  productsWithCategory$ = forkJoin([
+  // All products with category id mapped to category name
+  // Be sure to specify the type to ensure after the map that it knows the correct type
+  productsWithCategory$ = combineLatest(
     this.products$,
     this.productCategoryService.productCategories$
-  ]).pipe(
+  ).pipe(
     map(([products, categories]) =>
       products.map(
         p =>
@@ -41,10 +42,13 @@ export class ProductService {
           } as Product) // <-- note the type here!
       )
     ),
-    shareReplay(1)
+    shareReplay({ bufferSize: 1, refCount: false })
   );
 
   // Currently selected product
+  // Subscribed to in both List and Detail pages,
+  // so use the shareReply to share it with any component that uses it
+  // Location of the shareReplay matters ... won't share anything *after* the shareReplay
   selectedProduct$ = combineLatest(
     this.selectedProductChanges$,
     this.productsWithCategory$
@@ -52,13 +56,18 @@ export class ProductService {
     map(([selectedProductId, products]) =>
       products.find(product => product.id === selectedProductId)
     ),
-    // Displays this message twice??
-    /** yes, one for each subscription. You might want to share() this. */
-    tap(product => console.log('changeSelectedProduct', product))
+    tap(product => console.log('changeSelectedProduct', product)),
+    shareReplay({ bufferSize: 1, refCount: false }),
   );
 
+  // filter(Boolean) checks for nulls, which casts anything it gets to a Boolean.
+  // Filter(Boolean) of an undefined value returns false
+  // filter(Boolean) -> filter(value => !!value)
+  // SwitchMap here instead of mergeMap so quickly clicking on
+  // the items cancels prior requests.
   selectedProductSuppliers$ = this.selectedProduct$.pipe(
-    mergeMap(product =>
+    filter(value => !!value),
+    switchMap(product =>
       this.supplierService.getSuppliersByIds(product.supplierIds)
     )
   );
@@ -67,7 +76,7 @@ export class ProductService {
     private http: HttpClient,
     private productCategoryService: ProductCategoryService,
     private supplierService: SupplierService
-  ) {}
+  ) { }
 
   // Change the selected product
   changeSelectedProduct(selectedProductId: number | null): void {
@@ -106,13 +115,7 @@ export class ProductService {
 
   // Gets a single product by id
   private getProduct(id: number): Observable<Product> {
-    // const url = `${this.productsUrl}/${id}`;
     return this.products$.pipe(
-      /**
-       * this will load all products,
-       * perhaps keeping a single http call here is better in some cases.
-       * all depends on requirements. as an Observables sample I like this better ;)
-       */
       map(productlist => productlist.find(row => row.id === id)),
       tap(data => console.log('getProduct: ', JSON.stringify(data))),
       catchError(this.handleError)

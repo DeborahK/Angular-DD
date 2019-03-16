@@ -24,7 +24,7 @@ export class ProductCategoryService {
     /** any xxxMap will do, merge is the safest. */
     mergeMap(() => this.http.get<ProductCategory[]>(this.productsUrl)),
     /** As its' not completing bcs of the subject, use take to make it behave as usual */
-    take(1),
+    // take(1),// <== Here was the issue, this ubsubscribes from the above. not smart ina service.. sorry.
     tap({
       next: data => console.log('getCategories', JSON.stringify(data)),
       complete: () => console.log('competed request!')

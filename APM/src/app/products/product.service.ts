@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { combineLatest, forkJoin, Observable, ReplaySubject, throwError } from 'rxjs';
-import { catchError, map, mergeMap, shareReplay, take, tap, filter, switchMap } from 'rxjs/operators';
+import { combineLatest, Observable, ReplaySubject, throwError } from 'rxjs';
+import { catchError, filter, map, mergeMap, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { ProductCategoryService } from '../product-categories/product-category.service';
 import { SupplierService } from '../suppliers/supplier.service';
 import { Product } from './product';
@@ -21,9 +21,9 @@ export class ProductService {
   /** note, all the types are still there, I just don't need to type them out. */
   products$ = this.refresh.pipe(
     mergeMap(() => this.http.get<Product[]>(this.productsUrl)),
-    take(1),
-    shareReplay({ bufferSize: 1, refCount: false }),
+    // take(1),// <== Here was the issue, this ubsubscribes from the above. not smart ina service.. sorry.
     tap(data => console.log('getProducts: ', JSON.stringify(data))),
+    shareReplay({ bufferSize: 1, refCount: false }),
     catchError(this.handleError)
   );
 
@@ -57,7 +57,7 @@ export class ProductService {
       products.find(product => product.id === selectedProductId)
     ),
     tap(product => console.log('changeSelectedProduct', product)),
-    shareReplay({ bufferSize: 1, refCount: false }),
+    shareReplay({ bufferSize: 1, refCount: false })
   );
 
   // filter(Boolean) checks for nulls, which casts anything it gets to a Boolean.
@@ -76,7 +76,7 @@ export class ProductService {
     private http: HttpClient,
     private productCategoryService: ProductCategoryService,
     private supplierService: SupplierService
-  ) { }
+  ) {}
 
   // Change the selected product
   changeSelectedProduct(selectedProductId: number | null): void {
@@ -103,13 +103,13 @@ export class ProductService {
 
   // Refresh the data.
   refreshData(): void {
-    console.log('init refresh')
     this.start();
   }
 
   start() {
     // Start the related services
     this.productCategoryService.start();
+    console.log('start product refresh');
     this.refresh.next();
   }
 

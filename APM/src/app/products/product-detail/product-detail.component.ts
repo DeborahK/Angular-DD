@@ -24,7 +24,7 @@ export class ProductDetailComponent implements OnInit {
   // Create another combined stream with all data used in the view
   vm$ = combineLatest([this.product$, this.suppliers$, this.selectedProductId$]).pipe(
     map(([product, suppliers, selectedProductId]) => ({ product, suppliers, selectedProductId }))
-  )
+  );
 
   constructor(private productService: ProductService) { }
 

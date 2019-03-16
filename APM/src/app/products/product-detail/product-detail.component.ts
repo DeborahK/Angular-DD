@@ -8,38 +8,39 @@ import { Product } from '../product';
 import { Supplier } from '../../suppliers/supplier';
 
 @Component({
-    selector: 'pm-product-detail',
-    templateUrl: './product-detail.component.html'
+  selector: 'pm-product-detail',
+  templateUrl: './product-detail.component.html'
 })
 export class ProductDetailComponent implements OnInit {
-    pageTitle = 'Product Detail';
+  pageTitle = 'Product Detail';
 
-    selectedProductId$: Observable<number | null>;
-    product$: Observable<Product | null>;
-    suppliers$: Observable<Supplier[]>;
-    errorMessage: string;
+  selectedProductId$ = this.productService.selectedProductChanges$;
+  product$ = this.productService.selectedProduct$;
+  suppliers$ = this.productService.selectedProductSuppliers$;
+  errorMessage: string;
 
-    constructor(private productService: ProductService) { }
+  constructor(private productService: ProductService) {}
 
-    ngOnInit() {
-        // Watch for changes to the selected product
-        // Get the selected product and display the appropriate heading
-        this.selectedProductId$ = this.productService.selectedProductChanges$
-            .pipe(
-                tap(() => {
-                    this.product$ = this.productService.selectedProduct$;
-                    this.suppliers$ = this.productService.selectedProductSuppliers$;
-                })
-            );
+  ngOnInit() {
+    // Watch for changes to the selected product
+    // Get the selected product and display the appropriate heading
+
+    /** no need for his, the observables in the service take care of it. */
+
+    // this.selectedProductId$ = this.productService.selectedProductChanges$.pipe(
+    //   tap(() => {
+    //     this.product$ = this.productService.selectedProduct$;
+    //     this.suppliers$ = this.productService.selectedProductSuppliers$;
+    //   })
+    // );
+  }
+
+  displayProduct(product: Product): void {
+    // Display the appropriate heading
+    if (product) {
+      this.pageTitle = `Product Detail for: ${product.productName}`;
+    } else {
+      this.pageTitle = 'No product found';
     }
-
-    displayProduct(product: Product): void {
-        // Display the appropriate heading
-        if (product) {
-            this.pageTitle = `Product Detail for: ${product.productName}`;
-        } else {
-            this.pageTitle = 'No product found';
-        }
-    }
-
+  }
 }

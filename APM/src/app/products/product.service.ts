@@ -1,24 +1,24 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
 import { combineLatest, Observable, ReplaySubject, throwError } from 'rxjs';
 import { catchError, filter, map, mergeMap, shareReplay, switchMap, tap } from 'rxjs/operators';
+
+import { Product } from './product';
 import { ProductCategoryService } from '../product-categories/product-category.service';
 import { SupplierService } from '../suppliers/supplier.service';
-import { Product } from './product';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
-  private refresh = new ReplaySubject<void>();
-  private selectedProductSource = new ReplaySubject<number>();
+  private refresh = new ReplaySubject<void>(1);
+  private selectedProductSource = new ReplaySubject<number>(1);
   private productsUrl = 'api/products';
-  private suppliersUrl = 'api/suppliers';
 
   selectedProductChanges$ = this.selectedProductSource.asObservable();
 
   // All products
-  /** note, all the types are still there, I just don't need to type them out. */
   products$ = this.refresh.pipe(
     mergeMap(() => this.http.get<Product[]>(this.productsUrl)),
     // take(1),// <== Here was the issue, this ubsubscribes from the above. not smart ina service.. sorry.
@@ -107,6 +107,7 @@ export class ProductService {
   }
 
   start() {
+    console.log('in start');
     // Start the related services
     this.productCategoryService.start();
     console.log('start product refresh');
@@ -114,6 +115,9 @@ export class ProductService {
   }
 
   // Gets a single product by id
+  // Using the existing list of products.
+  // This could instead get the data directly
+  // if required, such as on an edit.
   private getProduct(id: number): Observable<Product> {
     return this.products$.pipe(
       map(productlist => productlist.find(row => row.id === id)),

@@ -14,6 +14,7 @@ import { ProductService } from '../product.service';
 export class ProductListComponent implements OnInit {
   pageTitle = 'Products';
   errorMessage: string;
+  
   products$ = this.productService.productsWithCategory$.pipe(
     catchError(error => {
       this.errorMessage = error;

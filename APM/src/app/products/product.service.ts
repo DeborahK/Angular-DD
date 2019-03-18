@@ -22,8 +22,6 @@ export class ProductService {
   // Expose the selectedProduct as an observable for use by any components
   selectedProductChanges$ = this.selectedProductSource.asObservable();
 
-  // LIST OF STREAMS
-
   // All products
   // Instead of defining the http.get in a method in the service,
   // set the observable directly
@@ -66,7 +64,7 @@ export class ProductService {
       products.find(product => product.id === selectedProductId)
     ),
     tap(product => console.log('changeSelectedProduct', product)),
-    shareReplay({ bufferSize: 1, refCount: false })
+    shareReplay()
   );
 
   // filter(Boolean) checks for nulls, which casts anything it gets to a Boolean.

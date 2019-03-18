@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 import { combineLatest, Observable, ReplaySubject, throwError } from 'rxjs';
-import { catchError, filter, map, mergeMap, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { catchError, filter, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 
 import { Product } from './product';
 import { ProductCategoryService } from '../product-categories/product-category.service';
@@ -66,14 +66,14 @@ export class ProductService {
     tap(product => console.log('changeSelectedProduct', product)),
     shareReplay()
   );
-
+  
   // filter(Boolean) checks for nulls, which casts anything it gets to a Boolean.
   // Filter(Boolean) of an undefined value returns false
   // filter(Boolean) -> filter(value => !!value)
   // SwitchMap here instead of mergeMap so quickly clicking on
   // the items cancels prior requests.
   selectedProductSuppliers$ = this.selectedProduct$.pipe(
-    filter(value => !!value),
+    filter(Boolean),
     switchMap(product =>
       this.supplierService.getSuppliersByIds(product.supplierIds)
     )

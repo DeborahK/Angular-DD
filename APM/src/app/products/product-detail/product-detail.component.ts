@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 
-import { tap, catchError, map, filter } from 'rxjs/operators';
+import { tap, catchError, map } from 'rxjs/operators';
 
 import { ProductService } from '../product.service';
 import { Product } from '../product';

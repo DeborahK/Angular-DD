@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 import { Observable, throwError, forkJoin } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, tap, shareReplay } from 'rxjs/operators';
 
 import { Supplier } from './supplier';
 
@@ -12,14 +12,16 @@ import { Supplier } from './supplier';
 export class SupplierService {
   private suppliersUrl = 'api/suppliers';
 
-  constructor(private http: HttpClient) { }
-
   // All Suppliers
+  // Not used by this app, but useful for supplier features
   suppliers$ = this.http.get<Supplier[]>(this.suppliersUrl)
     .pipe(
       tap(data => console.log('getSuppliers: ', JSON.stringify(data))),
+      shareReplay(),
       catchError(this.handleError)
     );
+
+  constructor(private http: HttpClient) { }
 
   // Gets set of suppliers given a set of ids
   // This has to be a method because it has a parameter.
@@ -35,16 +37,6 @@ export class SupplierService {
       tap(data => console.log('getSuppliersByIds: ', JSON.stringify(data))),
       catchError(this.handleError)
     );
-  }
-
-  // Gets a single supplier by id
-  private getSupplier(id: number): Observable<Supplier> {
-    const url = `${this.suppliersUrl}/${id}`;
-    return this.http.get<Supplier>(url)
-      .pipe(
-        tap(data => console.log('getSupplier: ', JSON.stringify(data))),
-        catchError(this.handleError)
-      );
   }
 
   private handleError(err) {

@@ -12,6 +12,7 @@ export class ProductShellComponent implements OnInit {
     constructor(private productService: ProductService) { }
 
     ngOnInit(): void {
-
+        // Set up the product services
+        this.productService.start();
     }
 }

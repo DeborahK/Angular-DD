@@ -36,6 +36,10 @@ export class ProductListComponent implements OnInit {
     });
   }
 
+  onRefresh(): void {
+    this.productService.refreshData();
+  }
+
   onSelected(productId: number): void {
     // Modify the URL to support deep linking
     this.router.navigate(['/products', productId]);

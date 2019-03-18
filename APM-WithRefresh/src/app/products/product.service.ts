@@ -15,9 +15,13 @@ export class ProductService {
   private productsUrl = 'api/products';
 
   // Use ReplaySubject to "replay" values to new subscribers
-  // ReplaySubject buffers the defined number of values, in this case 1.
+  // It buffers the defined number of values, in these cases, 1.
+
+  // Invalidates the cache and refreshes the data from the backend server
+  // The generic parameter is void because it does not care what the value is, only that an item is emitted.
+  private refresh = new ReplaySubject<void>(1);
   // Retains the currently selected product Id
-  // Uses 0 for no selected product (can't use null because it is used as a route parameter)
+  // Uses 0 for no selected product (couldn't use null because it is used as a route parameter)
   private selectedProductSource = new ReplaySubject<number>(1);
   // Expose the selectedProduct as an observable for use by any components
   selectedProductChanges$ = this.selectedProductSource.asObservable();
@@ -35,6 +39,16 @@ export class ProductService {
       shareReplay(),
       catchError(this.handleError)
     );
+
+  // All products
+  // Same as above, but set up with `refresh` to allow for invalidating the cache
+  // Must then `mergeMap` to flatten the inner observable.
+  // products$ = this.refresh.pipe(
+  //   mergeMap(() => this.http.get<Product[]>(this.productsUrl)),
+  //   tap(data => console.log('getProducts: ', JSON.stringify(data))),
+  //   shareReplay(),
+  //   catchError(this.handleError)
+  // );
 
   // All products with category id mapped to category name
   // Be sure to specify the type to ensure after the map that it knows the correct type
@@ -109,6 +123,17 @@ export class ProductService {
   //       catchError(this.handleError)
   //     );
   // }
+
+  // Refresh the data.
+  refreshData(): void {
+    this.start();
+  }
+
+  start() {
+    // Start the related services
+    this.productCategoryService.start();
+    this.refresh.next();
+  }
 
   // Gets a single product by id
   // Using the existing list of products.

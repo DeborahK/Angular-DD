@@ -1,47 +1,26 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, ReplaySubject, throwError } from 'rxjs';
-import { catchError, mergeMap, take, tap } from 'rxjs/operators';
+import { Observable,  throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { ProductCategory } from './product-category';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductCategoryService {
-  // Getting started and refresh ... not a data stream so therefore use ReplaySubject to retain the values
-  // "Reactive" way to control flow.
-  // Not ever actually putting any data into it.
-  private refresh = new ReplaySubject<void>();
-  private productsUrl = 'api/productCategories';
+  private productCategoriesUrl = 'api/productCategories';
 
   // All product categories
-  // Refresh is used as a starter here.
-  // [Object reference to a function]
-  // HTTP: One and done eg. Autocomplete
-  // Using refresh here instead of reassigning the value ensures that
-  // no references are lost.
-  productCategories$: Observable<ProductCategory[]> = this.refresh.pipe(
-    /** any xxxMap will do, merge is the safest. */
-    mergeMap(() => this.http.get<ProductCategory[]>(this.productsUrl)),
-    /** As its' not completing bcs of the subject, use take to make it behave as usual */
-    // take(1),// <== Here was the issue, this ubsubscribes from the above. not smart ina service.. sorry.
-    tap({
-      next: data => console.log('getCategories', JSON.stringify(data)),
-      complete: () => console.log('competed request!')
-    }),
-    catchError((this.handleError))
-  );
+  // Instead of defining the http.get in a method in the service,
+  // set the observable directly
+  // These could also be cached by adding `shareReplay`.
+  productCategories$: Observable<ProductCategory[]> = this.http.get<ProductCategory[]>(this.productCategoriesUrl)
+    .pipe(
+      tap(data => console.log('getCategories', JSON.stringify(data))),
+      catchError((this.handleError))
+    );
 
   constructor(private http: HttpClient) { }
-
-  // Refresh the data.
-  refreshData(): void {
-    this.refresh.next();
-  }
-
-  start() {
-    this.refreshData();
-  }
 
   private handleError(err) {
     // in a real world app, we may send the server to some remote logging infrastructure

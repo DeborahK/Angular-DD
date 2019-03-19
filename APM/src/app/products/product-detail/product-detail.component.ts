@@ -19,12 +19,12 @@ export class ProductDetailComponent implements OnInit {
     tap(product => this.displayProduct(product)),
     catchError(err => this.errorMessage = err)
   );
-  suppliers$ = this.productService.selectedProductSuppliers$;
+  productSuppliers$ = this.productService.selectedProductSuppliers$;
 
   // Create another combined stream with all data used in the view
-  vm$ = combineLatest([this.product$, this.suppliers$, this.selectedProductId$])
+  vm$ = combineLatest([this.product$, this.productSuppliers$])
     .pipe(
-      map(([product, suppliers, selectedProductId]) => ({ product, suppliers, selectedProductId }))
+      map(([product, productSuppliers]) => ({ product, productSuppliers }))
     );
 
   constructor(private productService: ProductService) { }

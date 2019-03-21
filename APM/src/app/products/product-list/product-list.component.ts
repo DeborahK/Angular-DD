@@ -1,26 +1,25 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 
-import { of, Observable } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { of, Subject } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
-import { Product } from '../product';
 import { ProductService } from '../product.service';
 
 @Component({
   selector: 'pm-product-list',
-  templateUrl: './product-list.component.html'
+  templateUrl: './product-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductListComponent implements OnInit {
   pageTitle = 'Products';
-  errorMessage: string;
+  error$ = new Subject<string>();
   
   products$ = this.productService.productsWithCategory$.pipe(
     catchError(error => {
-      this.errorMessage = error;
+      this.error$.next(error);
       return of(null);
-    })
-  );
+    }));
   selectedProductId$ = this.productService.selectedProductChanges$;
 
   constructor(

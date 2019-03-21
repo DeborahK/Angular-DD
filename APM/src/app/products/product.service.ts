@@ -53,7 +53,7 @@ export class ProductService {
   );
 
   // Currently selected product
-  // Subscribed to in both List and Detail pages,
+  // Used in both List and Detail pages,
   // so use the shareReply to share it with any component that uses it
   // Location of the shareReplay matters ... won't share anything *after* the shareReplay
   selectedProduct$ = combineLatest(
@@ -63,10 +63,11 @@ export class ProductService {
     map(([selectedProductId, products]) =>
       products.find(product => product.id === selectedProductId)
     ),
-    tap(product => console.log('changeSelectedProduct', product)),
-    shareReplay()
+    tap(product => console.log('selectedProduct', product)),
+    shareReplay(),
+    catchError(this.handleError)
   );
-  
+
   // filter(Boolean) checks for nulls, which casts anything it gets to a Boolean.
   // Filter(Boolean) of an undefined value returns false
   // filter(Boolean) -> filter(value => !!value)
@@ -76,7 +77,8 @@ export class ProductService {
     filter(Boolean),
     switchMap(product =>
       this.supplierService.getSuppliersByIds(product.supplierIds)
-    )
+    ),
+    catchError(this.handleError)
   );
 
   constructor(
@@ -124,13 +126,17 @@ export class ProductService {
     // in a real world app, we may send the server to some remote logging infrastructure
     // instead of just logging it to the console
     let errorMessage: string;
-    if (err.error instanceof ErrorEvent) {
-      // A client-side or network error occurred. Handle it accordingly.
-      errorMessage = `An error occurred: ${err.error.message}`;
+    if (typeof(err) === 'string') {
+      errorMessage = err;
     } else {
-      // The backend returned an unsuccessful response code.
-      // The response body may contain clues as to what went wrong,
-      errorMessage = `Backend returned code ${err.status}: ${err.body.error}`;
+      if (err.error instanceof ErrorEvent) {
+        // A client-side or network error occurred. Handle it accordingly.
+        errorMessage = `An error occurred: ${err.error.message}`;
+      } else {
+        // The backend returned an unsuccessful response code.
+        // The response body may contain clues as to what went wrong,
+        errorMessage = `Backend returned code ${err.status}: ${err.body.error}`;
+      }
     }
     console.error(err);
     return throwError(errorMessage);

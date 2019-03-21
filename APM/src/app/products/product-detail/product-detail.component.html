@@ -1,7 +1,7 @@
 <div class="card"
      *ngIf="vm$ | async  as vm ">
   <div class="card-header">
-    {{pageTitle}}
+    {{vm.pageTitle}}
   </div>
 
   <div class="card-body">
@@ -48,7 +48,8 @@
     </div>
 
   </div>
+</div>
 
-  <div class="alert alert-danger"
-       *ngIf="errorMessage">{{errorMessage}}
-  </div>
+<div class="alert alert-danger"
+     *ngIf="error$ | async as error">{{error}}
+</div>

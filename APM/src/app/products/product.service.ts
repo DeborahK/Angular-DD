@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { combineLatest, Observable, ReplaySubject, throwError } from 'rxjs';
+import { combineLatest, Observable, ReplaySubject, throwError, of } from 'rxjs';
 import { catchError, filter, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 
 import { Product } from './product';
@@ -29,7 +29,7 @@ export class ProductService {
   // Subscription remains even if there are no subscribers (navigating to the Welcome page for example)
   products$ = this.http.get<Product[]>(this.productsUrl)
     .pipe(
-      tap(data => console.log('getProducts: ', JSON.stringify(data))),
+      tap(data => console.log('products: ', JSON.stringify(data))),
       shareReplay(),
       catchError(this.handleError)
     );
@@ -68,15 +68,11 @@ export class ProductService {
     catchError(this.handleError)
   );
 
-  // filter(Boolean) checks for nulls, which casts anything it gets to a Boolean.
-  // Filter(Boolean) of an undefined value returns false
-  // filter(Boolean) -> filter(value => !!value)
   // SwitchMap here instead of mergeMap so quickly clicking on
   // the items cancels prior requests.
   selectedProductSuppliers$ = this.selectedProduct$.pipe(
-    filter(Boolean),
-    switchMap(product =>
-      this.supplierService.getSuppliersByIds(product.supplierIds)
+    switchMap(product => 
+      product ? this.supplierService.getSuppliersByIds(product.supplierIds): of(null)
     ),
     catchError(this.handleError)
   );
@@ -96,6 +92,7 @@ export class ProductService {
   // that are difficult to process
   // First, get the product
   // For each supplier for that product, get the supplier info
+  // private suppliersUrl = 'api/suppliers';
   // getProductSuppliers(id: number) {
   //   const productUrl = `${this.productsUrl}/${id}`;
   //   return this.http.get<Product>(productUrl)

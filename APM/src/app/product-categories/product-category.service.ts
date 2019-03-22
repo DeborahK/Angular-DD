@@ -14,9 +14,9 @@ export class ProductCategoryService {
   // Instead of defining the http.get in a method in the service,
   // set the observable directly
   // These could also be cached by adding `shareReplay`.
-  productCategories$: Observable<ProductCategory[]> = this.http.get<ProductCategory[]>(this.productCategoriesUrl)
+  productCategories$ = this.http.get<ProductCategory[]>(this.productCategoriesUrl)
     .pipe(
-      tap(data => console.log('getCategories', JSON.stringify(data))),
+      tap(data => console.log('categories', JSON.stringify(data))),
       catchError((this.handleError))
     );
 

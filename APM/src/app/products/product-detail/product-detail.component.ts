@@ -1,6 +1,6 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, filter } from 'rxjs/operators';
 
 import { ProductService } from '../product.service';
 import { Product } from '../product';
@@ -11,18 +11,22 @@ import { combineLatest, of, Subject } from 'rxjs';
   templateUrl: './product-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ProductDetailComponent implements OnInit {
+export class ProductDetailComponent{
   error$ = new Subject<string>();
 
   selectedProductId$ = this.productService.selectedProductChanges$;
+
   product$ = this.productService.selectedProduct$.pipe(
     catchError(error => {
       this.error$.next(error);
       return of(null);
     }));
+
+  // Set the page title
   pageTitle$ = this.product$.pipe(
-    map((p: Product) => p ? `Product Detail for: ${p.productName}` : 'No product found')
+    map((p: Product) => p ? `Product Detail for: ${p.productName}` : null)
   );
+
   productSuppliers$ = this.productService.selectedProductSuppliers$.pipe(
     catchError(error => {
       this.error$.next(error);
@@ -30,12 +34,12 @@ export class ProductDetailComponent implements OnInit {
     }));;
 
   // Create a combined stream with the data used in the view
+  // Use filter to skip if the product is null
   vm$ = combineLatest([this.product$, this.productSuppliers$, this.pageTitle$]).pipe(
+    filter(([product]) => product),
     map(([product, productSuppliers, pageTitle]) => ({ product, productSuppliers, pageTitle }))
   );
 
   constructor(private productService: ProductService) { }
-
-  ngOnInit() { }
 
 }

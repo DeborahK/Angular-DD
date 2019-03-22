@@ -14,5 +14,4 @@ export interface Product {
   description: string;
   price: number;
   supplierIds?: number[];
-  suppliers?: Supplier[];
 }

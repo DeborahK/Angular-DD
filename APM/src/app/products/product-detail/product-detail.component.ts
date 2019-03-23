@@ -11,7 +11,7 @@ import { combineLatest, of, Subject } from 'rxjs';
   templateUrl: './product-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ProductDetailComponent{
+export class ProductDetailComponent {
   error$ = new Subject<string>();
 
   selectedProductId$ = this.productService.selectedProductChanges$;
@@ -31,7 +31,7 @@ export class ProductDetailComponent{
     catchError(error => {
       this.error$.next(error);
       return of(null);
-    }));;
+    }));
 
   // Create a combined stream with the data used in the view
   // Use filter to skip if the product is null

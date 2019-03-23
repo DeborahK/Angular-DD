@@ -71,8 +71,8 @@ export class ProductService {
   // SwitchMap here instead of mergeMap so quickly clicking on
   // the items cancels prior requests.
   selectedProductSuppliers$ = this.selectedProduct$.pipe(
-    switchMap(product => 
-      product ? this.supplierService.getSuppliersByIds(product.supplierIds): of(null)
+    switchMap(product =>
+      product ? this.supplierService.getSuppliersByIds(product.supplierIds) : of(null)
     ),
     catchError(this.handleError)
   );

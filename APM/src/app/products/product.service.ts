@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 import { combineLatest, ReplaySubject, throwError, of } from 'rxjs';
-import { catchError, map, shareReplay, switchMap, tap, startWith } from 'rxjs/operators';
+import { catchError, map, shareReplay, tap, startWith } from 'rxjs/operators';
 
 import { Product } from './product';
-import { ProductCategoryService } from '../product-categories/product-category.service';
-import { SupplierService } from '../suppliers/supplier.service';
 import { ProductCategory } from '../product-categories/product-category';
+import { ProductCategoryService } from '../product-categories/product-category.service';
+import { Supplier } from '../suppliers/supplier';
+import { SupplierService } from '../suppliers/supplier.service';
 
 @Injectable({
   providedIn: 'root'
@@ -69,14 +70,16 @@ export class ProductService {
     catchError(this.handleError)
   );
 
-  // SwitchMap here instead of mergeMap so quickly clicking on
-  // the items cancels prior requests.
-  selectedProductSuppliers$ = this.selectedProduct$.pipe(
-    switchMap(product =>
-      product ? this.supplierService.getSuppliersByIds(product.supplierIds) : of(null)
-    ),
-    catchError(this.handleError)
-  );
+  selectedProductSuppliers$ = combineLatest(
+    this.selectedProduct$,
+    this.supplierService.suppliers$
+  ).pipe(
+    map(([product, suppliers]: [Product, Supplier[]]) =>
+      suppliers.filter(
+        supplier => product ? product.supplierIds.includes(supplier.id) : of(null)
+      )
+    )
+  )
 
   constructor(
     private http: HttpClient,

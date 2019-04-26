@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { Observable, throwError, forkJoin } from 'rxjs';
+import { throwError } from 'rxjs';
 import { catchError, tap, shareReplay } from 'rxjs/operators';
 
 import { Supplier } from './supplier';
@@ -12,23 +12,14 @@ import { Supplier } from './supplier';
 export class SupplierService {
   private suppliersUrl = 'api/suppliers';
 
-  constructor(private http: HttpClient) { }
+  suppliers$ = this.http.get<Supplier[]>(this.suppliersUrl)
+  .pipe(
+    tap(console.table),
+    shareReplay(),
+    catchError(this.handleError)
+  );
 
-  // Gets set of suppliers given a set of ids
-  // This has to be a method because it has a parameter.
-  getSuppliersByIds(ids: number[]): Observable<Supplier[]> {
-    // Build the list of http calls
-    const calls: Observable<Supplier>[] = [];
-    ids.map(id => {
-      const url = `${this.suppliersUrl}/${id}`;
-      calls.push(this.http.get<Supplier>(url));
-    });
-    // Join the calls
-    return forkJoin(calls).pipe(
-      tap(console.table),
-      catchError(this.handleError)
-    );
-  }
+  constructor(private http: HttpClient) { }
 
   private handleError(err) {
     // in a real world app, we may send the server to some remote logging infrastructure

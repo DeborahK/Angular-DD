@@ -1,17 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-
-import { ProductService } from '../product.service';
-import { ProductCategoryService } from 'src/app/product-categories/product-category.service';
+import { Component } from '@angular/core';
 
 @Component({
     templateUrl: './product-shell.component.html'
 })
-export class ProductShellComponent implements OnInit {
-    pageTitle = 'Products';
+export class ProductShellComponent {
 
-    constructor(private productService: ProductService) { }
-
-    ngOnInit(): void {
-
-    }
 }

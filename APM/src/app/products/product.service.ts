@@ -1,26 +1,19 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { combineLatest, Observable, ReplaySubject, throwError, of } from 'rxjs';
-import { catchError, filter, map, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { combineLatest, ReplaySubject, throwError, of } from 'rxjs';
+import { catchError, map, shareReplay, switchMap, tap, startWith } from 'rxjs/operators';
 
 import { Product } from './product';
 import { ProductCategoryService } from '../product-categories/product-category.service';
 import { SupplierService } from '../suppliers/supplier.service';
+import { ProductCategory } from '../product-categories/product-category';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
   private productsUrl = 'api/products';
-
-  // Use ReplaySubject to "replay" values to new subscribers
-  // ReplaySubject buffers the defined number of values, in this case 1.
-  // Retains the currently selected product Id
-  // Uses 0 for no selected product (can't use null because it is used as a route parameter)
-  private selectedProductSource = new ReplaySubject<number>(1);
-  // Expose the selectedProduct as an observable for use by any components
-  selectedProductChanges$ = this.selectedProductSource.asObservable();
 
   // All products
   // Instead of defining the http.get in a method in the service,
@@ -29,18 +22,18 @@ export class ProductService {
   // Subscription remains even if there are no subscribers (navigating to the Welcome page for example)
   products$ = this.http.get<Product[]>(this.productsUrl)
     .pipe(
-      tap(data => console.log('products: ', JSON.stringify(data))),
+      tap(console.table),
       shareReplay(),
       catchError(this.handleError)
     );
 
   // All products with category id mapped to category name
-  // Be sure to specify the type to ensure after the map that it knows the correct type
+  // Be sure to specify the type after the map to ensure that it knows the correct type
   productsWithCategory$ = combineLatest(
     this.products$,
     this.productCategoryService.productCategories$
   ).pipe(
-    map(([products, categories]) =>
+    map(([products, categories]: [Product[], ProductCategory[]]) =>
       products.map(
         p =>
           ({
@@ -52,12 +45,20 @@ export class ProductService {
     shareReplay()
   );
 
+  // Use ReplaySubject to "replay" values to new subscribers
+  // ReplaySubject buffers the defined number of values, in this case 1.
+  // Retains the currently selected product Id
+  // Uses 0 for no selected product (can't use null because it is used as a route parameter)
+  private productSelectedAction = new ReplaySubject<number>(1);
+  // Expose the selectedProduct as an observable for use by any components
+  productSelectedAction$ = this.productSelectedAction.asObservable().pipe(startWith(0));
+
   // Currently selected product
   // Used in both List and Detail pages,
   // so use the shareReply to share it with any component that uses it
   // Location of the shareReplay matters ... won't share anything *after* the shareReplay
   selectedProduct$ = combineLatest(
-    this.selectedProductChanges$,
+    this.productSelectedAction$,
     this.productsWithCategory$
   ).pipe(
     map(([selectedProductId, products]) =>
@@ -85,45 +86,14 @@ export class ProductService {
 
   // Change the selected product
   changeSelectedProduct(selectedProductId: number | null): void {
-    this.selectedProductSource.next(selectedProductId);
-  }
-
-  // AntiPattern: Nested (or chained) http calls results in nested observables
-  // that are difficult to process
-  // First, get the product
-  // For each supplier for that product, get the supplier info
-  // private suppliersUrl = 'api/suppliers';
-  // getProductSuppliers(id: number) {
-  //   const productUrl = `${this.productsUrl}/${id}`;
-  //   return this.http.get<Product>(productUrl)
-  //     .pipe(
-  //       map(product =>
-  //         product.supplierIds.map(supplierId => {
-  //           const supplierUrl = `${this.suppliersUrl}/${supplierId}`;
-  //           return this.http.get(supplierUrl);
-  //         })
-  //       ),
-  //       catchError(this.handleError)
-  //     );
-  // }
-
-  // Gets a single product by id
-  // Using the existing list of products.
-  // This could instead get the data directly
-  // if required, such as on an edit.
-  private getProduct(id: number): Observable<Product> {
-    return this.products$.pipe(
-      map(productlist => productlist.find(row => row.id === id)),
-      tap(data => console.log('getProduct: ', JSON.stringify(data))),
-      catchError(this.handleError)
-    );
+    this.productSelectedAction.next(selectedProductId);
   }
 
   private handleError(err) {
     // in a real world app, we may send the server to some remote logging infrastructure
     // instead of just logging it to the console
     let errorMessage: string;
-    if (typeof(err) === 'string') {
+    if (typeof (err) === 'string') {
       errorMessage = err;
     } else {
       if (err.error instanceof ErrorEvent) {

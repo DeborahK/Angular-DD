@@ -16,7 +16,7 @@ export class ProductCategoryService {
   // These could also be cached by adding `shareReplay`.
   productCategories$ = this.http.get<ProductCategory[]>(this.productCategoriesUrl)
     .pipe(
-      tap(data => console.log('categories', JSON.stringify(data))),
+      tap(console.table),
       catchError((this.handleError))
     );
 

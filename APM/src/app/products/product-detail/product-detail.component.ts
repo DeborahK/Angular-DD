@@ -14,7 +14,7 @@ import { combineLatest, of, Subject } from 'rxjs';
 export class ProductDetailComponent {
   error$ = new Subject<string>();
 
-  selectedProductId$ = this.productService.selectedProductChanges$;
+  selectedProductId$ = this.productService.productSelectedAction$;
 
   product$ = this.productService.selectedProduct$.pipe(
     catchError(error => {

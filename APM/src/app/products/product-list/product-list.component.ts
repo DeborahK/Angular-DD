@@ -20,7 +20,8 @@ export class ProductListComponent implements OnInit {
       this.error$.next(error);
       return of(null);
     }));
-  selectedProductId$ = this.productService.selectedProductChanges$;
+
+  selectedProductId$ = this.productService.productSelectedAction$;
 
   constructor(
     private route: ActivatedRoute,

@@ -12,15 +12,6 @@ import { Supplier } from './supplier';
 export class SupplierService {
   private suppliersUrl = 'api/suppliers';
 
-  // All Suppliers
-  // Not used by this app, but useful for supplier features
-  suppliers$ = this.http.get<Supplier[]>(this.suppliersUrl)
-    .pipe(
-      tap(data => console.log('suppliers: ', JSON.stringify(data))),
-      shareReplay(),
-      catchError(this.handleError)
-    );
-
   constructor(private http: HttpClient) { }
 
   // Gets set of suppliers given a set of ids
@@ -34,7 +25,7 @@ export class SupplierService {
     });
     // Join the calls
     return forkJoin(calls).pipe(
-      tap(data => console.log('getSuppliersByIds: ', JSON.stringify(data))),
+      tap(console.table),
       catchError(this.handleError)
     );
   }

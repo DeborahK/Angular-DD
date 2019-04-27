@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { combineLatest, ReplaySubject, throwError, of } from 'rxjs';
-import { catchError, map, shareReplay, tap, startWith } from 'rxjs/operators';
+import { combineLatest, throwError, of, BehaviorSubject } from 'rxjs';
+import { catchError, map, shareReplay, tap, switchMap } from 'rxjs/operators';
 
 import { Product } from './product';
 import { ProductCategory } from '../product-categories/product-category';
@@ -39,27 +39,22 @@ export class ProductService {
         p =>
           ({
             ...p,
-            category: categories.find(c => p.categoryId === c.id).name
+            category: categories.find(c =>
+              p.categoryId === c.id).name
           } as Product) // <-- note the type here!
       )
     ),
     shareReplay()
   );
 
-  // Use ReplaySubject to "replay" values to new subscribers
-  // ReplaySubject buffers the defined number of values, in this case 1.
-  // Retains the currently selected product Id
-  // Uses 0 for no selected product (can't use null because it is used as a route parameter)
-  private productSelectedAction = new ReplaySubject<number>(1);
-  // Expose the selectedProduct as an observable for use by any components
-  productSelectedAction$ = this.productSelectedAction.asObservable().pipe(startWith(0));
+  private productSelectedAction = new BehaviorSubject<number>(0);
 
   // Currently selected product
   // Used in both List and Detail pages,
   // so use the shareReply to share it with any component that uses it
   // Location of the shareReplay matters ... won't share anything *after* the shareReplay
   selectedProduct$ = combineLatest(
-    this.productSelectedAction$,
+    this.productSelectedAction,
     this.productsWithCategory$
   ).pipe(
     map(([selectedProductId, products]) =>
@@ -79,7 +74,7 @@ export class ProductService {
         supplier => product ? product.supplierIds.includes(supplier.id) : of(null)
       )
     )
-  )
+  );
 
   constructor(
     private http: HttpClient,

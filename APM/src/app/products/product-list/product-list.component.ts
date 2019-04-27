@@ -1,10 +1,11 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 
-import { of, Subject } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { of, Subject, Observable, combineLatest } from 'rxjs';
+import { catchError, filter, map, tap } from 'rxjs/operators';
 
 import { ProductService } from '../product.service';
+import { Product } from '../product';
 
 @Component({
   selector: 'pm-product-list',
@@ -15,19 +16,26 @@ export class ProductListComponent implements OnInit {
   pageTitle = 'Products';
   error$ = new Subject<string>();
 
-  products$ = this.productService.productsWithCategory$.pipe(
-    catchError(error => {
-      this.error$.next(error);
-      return of(null);
-    }));
+  products$: Observable<Product[]> = this.productService.productsWithCategory$
+    .pipe(
+      catchError(error => {
+        this.error$.next(error);
+        return of(null);
+      }));
 
-  selectedProductId$ = this.productService.productSelectedAction$;
+  selectedProduct$ = this.productService.selectedProduct$;
+
+  vm$ = combineLatest([this.products$, this.selectedProduct$])
+    .pipe(
+      map(([products, product]: [Product[], Product]) =>
+        ({ products, productId: product ? product.id : 0 }))
+    );
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private productService: ProductService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Read the parameter from the route - supports deep linking

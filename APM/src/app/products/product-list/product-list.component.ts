@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 
 import { of, Subject, Observable, combineLatest } from 'rxjs';
-import { catchError, filter, map, tap } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import { ProductService } from '../product.service';
 import { Product } from '../product';

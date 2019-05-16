@@ -25,7 +25,9 @@ export class ProductListComponent implements OnInit {
 
   selectedProduct$ = this.productService.selectedProduct$;
 
-  vm$ = combineLatest([this.products$, this.selectedProduct$])
+  vm$ = combineLatest(
+    [this.products$, this.selectedProduct$]
+  )
     .pipe(
       map(([products, product]: [Product[], Product]) =>
         ({ products, productId: product ? product.id : 0 }))
